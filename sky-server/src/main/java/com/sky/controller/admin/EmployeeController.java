@@ -81,7 +81,7 @@ public class EmployeeController {
      * @param employeeDTO
      * @return
      */
-    @PostMapping    //前面ReslutMapping已经给出具体的路径，所以直接加上PostMapping注解即可
+    @PostMapping    //前面RequestMapping已经给出具体的路径，所以直接加上PostMapping注解即可
     @ApiOperation("新增员工")
     public Result save(@RequestBody EmployeeDTO employeeDTO){
         log.info("新增员工：{}", employeeDTO);
@@ -117,9 +117,25 @@ public class EmployeeController {
         return Result.success();
     }
 
+    /**
+     * 根据id查询员工
+     * @param id
+     * @return
+     */
+    @GetMapping("/{id}")
+    @ApiOperation("根据id查询员工")
+    public Result<Employee> getById(@PathVariable long id){
+        Employee employee = employeeService.getById(id);
+        return Result.success(employee);
+    }
 
-
-
+    @PutMapping
+    @ApiOperation("编辑员工信息")
+    public Result update(@RequestBody EmployeeDTO employeeDTO){
+        log.info("编辑员工信息{}", employeeDTO);
+        employeeService.update(employeeDTO);
+        return Result.success();
+    }
 
 
 
