@@ -10,4 +10,11 @@
             (#{df.dishId},#{df.name},#{df.value})          <!-- 因为我们在前端中填写的数据未提交所有dishid不能直接获取到，必须在dish中进行主键返回-->
         </foreach>
     </insert>
+
+    <delete id="deleteByDishIds">
+        delete from dish_flavor where id in
+        <foreach collection="ids" item="id" open="(" close = ")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
 </mapper>
