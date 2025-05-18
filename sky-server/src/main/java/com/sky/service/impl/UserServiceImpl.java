@@ -20,7 +20,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
-public class UserServiceImp implements UserService {
+public class UserServiceImpl implements UserService {
 
 
     @Autowired
