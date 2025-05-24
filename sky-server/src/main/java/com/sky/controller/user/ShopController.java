@@ -31,4 +31,13 @@ public class ShopController {
         log.info("店铺的营业状态为：{}", status == 1? "营业中" :"打样中");
         return Result.success(status);
     }
+
+
+    @PostMapping("/{status}")
+    @ApiOperation("设置店铺的营业状态")
+    public Result setStatus(@PathVariable Integer status){
+        log.info("设置店铺的营业状态为：{}", status == 1? "营业中" :"打样中");
+        redisTemplate.opsForValue().set(Key, status);
+        return Result.success();
+    }
 }
