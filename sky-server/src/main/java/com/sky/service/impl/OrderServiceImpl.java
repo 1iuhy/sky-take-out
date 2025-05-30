@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -262,5 +263,32 @@ public class OrderServiceImpl implements OrderService {
         orders.setCancelReason("用户取消");
         orders.setCancelTime(LocalDateTime.now());
         orderMapper.update(orders);
+    }
+
+    /**
+     * 再来一单
+     * @param id
+     */
+    public void repetition(Long id) {
+        Long userId = BaseContext.getCurrentId();
+
+        List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(id);
+
+        //先转换成Stream对象进行map中lambda表达式的方法体中的处理方法，最后需要收集并且转化成List对象
+        List<ShoppingCart> shoppingCartList = orderDetailList.stream().map(x->{     //这个x是lambda表达式，参数列表->方法体
+                    ShoppingCart shoppingCart = new ShoppingCart();
+
+                    //将订单明细中的数据拷贝到购物车对象中
+                    BeanUtils.copyProperties(x, shoppingCart, "id");//这里的id是一个忽略字段
+
+                    //在购物车表中有一个useID字段，但是在订单明细表中没有，所以要重新设置
+                    shoppingCart.setUserId(userId);
+                    shoppingCart.setCreateTime(LocalDateTime.now());
+
+                    return shoppingCart;
+                }
+        ).collect(Collectors.toList());//将Stream<ShoppingCart>收集转换成List<ShoppingCart>对象
+
+        shoppingCartMapper.insertBatch(shoppingCartList);
     }
 }
