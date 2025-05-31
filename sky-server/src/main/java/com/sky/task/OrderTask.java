@@ -21,7 +21,7 @@ public class OrderTask {
     /**
      * 处理超时订单
      */
-    @Scheduled(cron = "0 * * * * ? *")
+    @Scheduled(cron = "0 * * * * ? ")
 
     private void processTimeOrder(){
         log.info("处理超时订单：{}", LocalDateTime.now());

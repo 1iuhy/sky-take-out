@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -17,6 +18,7 @@ import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +26,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,6 +49,8 @@ public class OrderServiceImpl implements OrderService {
     private WeChatPayUtil weChatPayUtil;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private WebSocketServer webSocketServer;
 
 
     /**
@@ -147,6 +152,16 @@ public class OrderServiceImpl implements OrderService {
         log.info("调用updateStatus，用于替换微信支付更新数据库状态的问题");
         orderMapper.updateStatus(OrderStatus, OrderPaidStatus, check_out_time, orderNumber);
 
+        Orders ordersDB = orderMapper.getByNumber(orderNumber);
+        //通过websocket向客户端浏览器推送消息
+        Map map =new HashMap();
+        map.put("type",1);
+        map.put("orderId", ordersDB.getId());
+        map.put("content","订单号" + orderNumber);
+
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
+
         return vo;
 
 
@@ -171,6 +186,8 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+
+
     }
 
     /**
@@ -215,12 +232,28 @@ public class OrderServiceImpl implements OrderService {
      */
     public OrderVO details(Long id) {
         Orders orders = orderMapper.getById(id);
+        //设置配送地址
+        Long addressBookId = orders.getAddressBookId();
+        String addrass = getAddrass(addressBookId);
+        orders.setAddress(addrass);
         OrderVO orderVO = new OrderVO();
         List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(orderVO.getId());
         BeanUtils.copyProperties(orders, orderVO);
 
         orderVO.setOrderDetailList(orderDetailList);
         return orderVO;
+    }
+
+    /**
+     * 获取订单配送地址
+     * @param addressBookId
+     * @return
+     */
+    private String getAddrass(Long addressBookId){
+        AddressBook addressBook = addressBookMapper.getById(addressBookId);
+        String address = addressBook.getProvinceName() + addressBook.getCityName() +
+                addressBook.getDistrictName() + addressBook.getDetail();
+        return address;
     }
 
     /**
